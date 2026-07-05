@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#F6F7FB" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="Meds" />
+<title>Meds — did I take them?</title>
+<style>
+  :root{
+    --paper:#F6F7FB; --card:#FFFFFF; --ink:#1B1B2A; --ink-soft:#5A5B72;
+    --line:#E4E6F0;
+    --am:#E0930F; --am-soft:#FCF2DC; --am-line:#F0D9A6;
+    --pm:#4B4A8C; --pm-soft:#EDECF7; --pm-line:#CFCEEB;
+    --ok:#1E8E5A; --danger:#C0473B;
+    --r:20px; --shadow:0 1px 2px rgba(27,27,42,.06),0 8px 24px rgba(27,27,42,.05);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:ui-rounded,"SF Pro Rounded",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    line-height:1.4; -webkit-font-smoothing:antialiased;
+    padding:max(16px,env(safe-area-inset-top)) 16px calc(48px + env(safe-area-inset-bottom));
+    max-width:640px; margin:0 auto;
+  }
+  h1,h2,h3{margin:0}
+  button{font-family:inherit; cursor:pointer}
+
+  /* Header */
+  header{display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:20px}
+  .brand{font-size:22px; font-weight:800; letter-spacing:-.02em}
+  .brand small{display:block; font-size:12px; font-weight:600; color:var(--ink-soft); letter-spacing:0}
+  .clock{text-align:right}
+  .clock .date{font-size:13px; font-weight:700; color:var(--ink-soft)}
+  .clock .time{font-size:22px; font-weight:800; letter-spacing:-.02em; font-variant-numeric:tabular-nums}
+
+  /* Section labels */
+  .eyebrow{font-size:11px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-soft); margin:0 4px 10px}
+
+  /* Status chips */
+  .rounds{display:flex; gap:10px; margin-bottom:14px}
+  .chip{flex:1; display:flex; align-items:center; gap:8px; padding:10px 12px; border-radius:14px; font-weight:700; font-size:13px; border:1.5px solid var(--line); background:var(--card)}
+  .chip .dot{width:9px; height:9px; border-radius:50%; background:var(--line); flex:none}
+  .chip.done{border-color:transparent}
+  .chip.am.done{background:var(--am-soft); color:var(--am)} .chip.am.done .dot{background:var(--am)}
+  .chip.pm.done{background:var(--pm-soft); color:var(--pm)} .chip.pm.done .dot{background:var(--pm)}
+  .chip .lbl{color:var(--ink-soft); font-weight:800; text-transform:uppercase; font-size:11px; letter-spacing:.08em}
+  .chip.done .lbl{color:inherit}
+  .chip .state{margin-left:auto; font-size:12px; font-weight:700}
+
+  /* Today split */
+  .today{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:28px}
+  .col{border-radius:var(--r); padding:14px; box-shadow:var(--shadow); border:1.5px solid}
+  .col.am{background:linear-gradient(180deg,var(--am-soft),#fff 78%); border-color:var(--am-line)}
+  .col.pm{background:linear-gradient(180deg,var(--pm-soft),#fff 78%); border-color:var(--pm-line)}
+  .col.now{outline:2px solid; outline-offset:2px}
+  .col.am.now{outline-color:var(--am)} .col.pm.now{outline-color:var(--pm)}
+  .col-head{display:flex; align-items:center; gap:8px; margin-bottom:12px}
+  .col-head svg{width:22px; height:22px; flex:none}
+  .col.am .col-head svg{color:var(--am)} .col.pm .col-head svg{color:var(--pm)}
+  .col-head h3{font-size:15px; font-weight:800; letter-spacing:-.01em}
+  .col-head .nowtag{margin-left:auto; font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; padding:2px 7px; border-radius:20px}
+  .col.am .nowtag{background:var(--am); color:#fff} .col.pm .nowtag{background:var(--pm); color:#fff}
+
+  .dose{width:100%; display:flex; align-items:center; gap:10px; text-align:left; padding:11px 12px; margin-bottom:8px; border-radius:14px; border:1.5px solid var(--line); background:var(--card); transition:transform .06s ease}
+  .dose:last-child{margin-bottom:0}
+  .dose:active{transform:scale(.98)}
+  .dose .box{width:24px; height:24px; border-radius:8px; border:2px solid var(--line); flex:none; display:grid; place-items:center; color:#fff}
+  .dose .box svg{width:15px; height:15px; opacity:0}
+  .dose .name{font-weight:700; font-size:15px; line-height:1.15}
+  .dose .sub{font-size:11.5px; color:var(--ink-soft); font-weight:600}
+  .dose.taken{border-color:transparent}
+  .col.am .dose.taken{background:var(--am-soft)} .col.am .dose.taken .box{background:var(--am); border-color:var(--am)}
+  .col.pm .dose.taken{background:var(--pm-soft)} .col.pm .dose.taken .box{background:var(--pm); border-color:var(--pm)}
+  .dose.taken .box svg{opacity:1}
+  .dose.taken .sub{color:inherit; opacity:.85; font-weight:700}
+  .col.am .dose.taken .sub{color:var(--am)} .col.pm .dose.taken .sub{color:var(--pm)}
+  .col-empty{font-size:13px; color:var(--ink-soft); padding:8px 4px; font-weight:600}
+
+  /* Generic card sections */
+  .panel{background:var(--card); border:1.5px solid var(--line); border-radius:var(--r); padding:14px; margin-bottom:20px}
+  .panel-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px}
+  .panel-head .eyebrow{margin:0}
+
+  /* Med list */
+  .med{display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--line)}
+  .med:last-child{border-bottom:0}
+  .med .mname{font-weight:700; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .med .sched{display:flex; gap:5px}
+  .tag{font-size:10px; font-weight:800; letter-spacing:.06em; padding:3px 8px; border-radius:20px; text-transform:uppercase}
+  .tag.am{background:var(--am-soft); color:var(--am)} .tag.pm{background:var(--pm-soft); color:var(--pm)}
+  .icon-btn{border:none; background:transparent; color:var(--ink-soft); padding:6px; border-radius:8px; display:grid; place-items:center}
+  .icon-btn:hover{background:var(--paper); color:var(--ink)}
+  .icon-btn.del:hover{color:var(--danger)}
+  .icon-btn svg{width:17px; height:17px}
+  .empty{color:var(--ink-soft); font-size:14px; font-weight:600; padding:6px 0}
+
+  .btn{border:1.5px solid var(--line); background:var(--card); color:var(--ink); font-weight:700; font-size:13px; padding:8px 13px; border-radius:12px}
+  .btn:hover{border-color:var(--ink-soft)}
+  .btn.primary{background:var(--ink); color:#fff; border-color:var(--ink)}
+  .btn.primary:hover{opacity:.9}
+
+  /* Add form */
+  .addform{display:none; gap:8px; flex-wrap:wrap; align-items:center; margin-top:6px; padding-top:12px; border-top:1px solid var(--line)}
+  .addform.open{display:flex}
+  .addform input[type=text]{flex:1; min-width:140px; font-family:inherit; font-size:15px; font-weight:600; padding:9px 12px; border:1.5px solid var(--line); border-radius:12px; color:var(--ink); background:var(--paper)}
+  .addform input[type=text]:focus{outline:2px solid var(--ink); border-color:transparent}
+  .toggle{display:flex; gap:6px}
+  .toggle button{border:1.5px solid var(--line); background:var(--card); font-weight:800; font-size:11px; letter-spacing:.06em; padding:8px 11px; border-radius:12px; color:var(--ink-soft)}
+  .toggle button[aria-pressed=true].am{background:var(--am-soft); color:var(--am); border-color:var(--am-line)}
+  .toggle button[aria-pressed=true].pm{background:var(--pm-soft); color:var(--pm); border-color:var(--pm-line)}
+
+  /* History */
+  .hrow{display:flex; align-items:center; gap:12px; padding:8px 0; border-bottom:1px solid var(--line); font-size:14px}
+  .hrow:last-child{border-bottom:0}
+  .hrow .hd{width:70px; font-weight:700; color:var(--ink-soft); flex:none}
+  .hrow.today-row .hd{color:var(--ink)}
+  .hcells{display:flex; gap:8px; flex-wrap:wrap}
+  .hcell{display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700; padding:4px 9px; border-radius:20px; border:1.5px solid var(--line); color:var(--ink-soft)}
+  .hcell.am.on{background:var(--am-soft); color:var(--am); border-color:transparent}
+  .hcell.pm.on{background:var(--pm-soft); color:var(--pm); border-color:transparent}
+  .hcell.miss{opacity:.5; text-decoration:line-through}
+
+  footer{text-align:center; margin-top:6px; font-size:12px; color:var(--ink-soft); line-height:1.6}
+  .backup-btns{display:flex; gap:8px; justify-content:center; margin-bottom:12px; flex-wrap:wrap}
+  .note{font-size:12px; color:var(--ink-soft); background:var(--card); border:1.5px solid var(--line); border-radius:14px; padding:11px 13px; margin-bottom:20px; font-weight:600}
+
+  @media (max-width:400px){ .today{grid-template-columns:1fr} }
+  @media (prefers-reduced-motion:reduce){ *{transition:none!important} }
+  :focus-visible{outline:2px solid var(--ink); outline-offset:2px}
+</style>
+</head>
+<body>
+  <header>
+    <div class="brand">meds<small id="periodLabel">tap a dose when you take it</small></div>
+    <div class="clock">
+      <div class="date" id="dateStr">—</div>
+      <div class="time" id="timeStr">—</div>
+    </div>
+  </header>
+
+  <div class="rounds" id="rounds"></div>
+
+  <div class="today" id="today"></div>
+
+  <section class="panel">
+    <div class="panel-head">
+      <p class="eyebrow">Your medications</p>
+      <button class="btn" id="addToggle">+ Add</button>
+    </div>
+    <div id="medList"></div>
+    <div class="addform" id="addForm">
+      <input type="text" id="medName" placeholder="Medication name" maxlength="40" />
+      <div class="toggle">
+        <button type="button" class="am" id="tgAm" aria-pressed="true">AM</button>
+        <button type="button" class="pm" id="tgPm" aria-pressed="true">PM</button>
+      </div>
+      <button class="btn primary" id="medSave">Save</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <p class="eyebrow" style="margin-bottom:6px">Recent days</p>
+    <div id="history"></div>
+  </section>
+
+  <div class="note" id="storageNote"></div>
+
+  <footer>
+    <div class="backup-btns">
+      <button class="btn" id="exportBtn">Export backup (.json)</button>
+      <button class="btn" id="importBtn">Import backup</button>
+      <input type="file" id="importFile" accept="application/json,.json" hidden />
+    </div>
+    Data lives in this browser only. Export a backup to keep it safe or commit it to your repo.<br>
+    A helper for your memory — not medical advice.
+  </footer>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- SVG icons ----------
+  var SUN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4" fill="currentColor" stroke="none"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
+  var MOON='<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20 14.5A8 8 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5z"/></svg>';
+  var CHECK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>';
+  var PEN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
+  var TRASH='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>';
+
+  // ---------- storage (localStorage with in-memory fallback) ----------
+  var KEY='medtracker.v1';
+  var mem=null, canPersist=true;
+  try{ localStorage.setItem('__t','1'); localStorage.removeItem('__t'); }
+  catch(e){ canPersist=false; }
+
+  function load(){
+    if(canPersist){
+      try{ var raw=localStorage.getItem(KEY); if(raw) return JSON.parse(raw); }
+      catch(e){ canPersist=false; }
+    }
+    return mem || seed();
+  }
+  function save(){
+    if(canPersist){
+      try{ localStorage.setItem(KEY, JSON.stringify(state)); return; }
+      catch(e){ canPersist=false; }
+    }
+    mem=state;
+  }
+  function seed(){
+    return { meds:[ {id:uid(), name:'My medication', am:true, pm:true} ], log:{} };
+  }
+  function uid(){ return 'm'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+
+  var state=load();
+
+  // ---------- date helpers ----------
+  function dayKey(d){ d=d||new Date();
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  function fmtTime(ts){ var d=new Date(ts);
+    var h=d.getHours(), m=d.getMinutes(), ap=h<12?'AM':'PM'; h=h%12; if(h===0)h=12;
+    return h+':'+String(m).padStart(2,'0')+' '+ap; }
+  function labelForKey(k){
+    var p=k.split('-'), d=new Date(+p[0],+p[1]-1,+p[2]);
+    var today=dayKey(), y=dayKey(new Date(Date.now()-86400000));
+    if(k===today) return 'Today';
+    if(k===y) return 'Yesterday';
+    return d.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
+  }
+
+  // ---------- log access ----------
+  function entry(key, medId){
+    var day=state.log[key]||(state.log[key]={});
+    return day[medId]||(day[medId]={am:null,pm:null});
+  }
+  function isTaken(key, medId, slot){ var d=state.log[key]; return !!(d && d[medId] && d[medId][slot]); }
+
+  function toggleDose(medId, slot){
+    var key=dayKey(), e=entry(key, medId), med=state.meds.find(function(m){return m.id===medId;});
+    if(e[slot]){
+      var when=fmtTime(e[slot]);
+      if(!confirm((med?med.name:'This')+' — '+(slot==='am'?'morning':'evening')+' dose was marked taken at '+when+'.\n\nUndo it?')) return;
+      e[slot]=null;
+    } else {
+      e[slot]=Date.now();
+    }
+    save(); render();
+  }
+
+  // ---------- rendering ----------
+  var el=function(id){ return document.getElementById(id); };
+
+  function roundStatus(slot){
+    var key=dayKey(), meds=state.meds.filter(function(m){return m[slot];});
+    if(!meds.length) return {n:0,done:0};
+    var done=meds.filter(function(m){return isTaken(key,m.id,slot);}).length;
+    return {n:meds.length, done:done};
+  }
+
+  function renderRounds(){
+    var hour=new Date().getHours(), curSlot=hour<12?'am':'pm';
+    var html='';
+    [['am','Morning'],['pm','Evening']].forEach(function(pair){
+      var slot=pair[0], s=roundStatus(slot), complete=s.n>0 && s.done===s.n;
+      var st = s.n===0 ? 'none' : (complete ? 'All taken' : s.done+' of '+s.n);
+      html+='<div class="chip '+slot+(complete?' done':'')+'">'+
+              '<span class="dot"></span><span class="lbl">'+pair[1]+'</span>'+
+              '<span class="state">'+(s.n===0?'—':st)+'</span></div>';
+    });
+    el('rounds').innerHTML=html;
+    el('periodLabel').textContent = curSlot==='am' ? 'morning · tap a dose when taken' : 'evening · tap a dose when taken';
+  }
+
+  function renderToday(){
+    var key=dayKey(), hour=new Date().getHours(), curSlot=hour<12?'am':'pm';
+    var html='';
+    [['am','Morning',SUN],['pm','Evening',MOON]].forEach(function(pair){
+      var slot=pair[0], meds=state.meds.filter(function(m){return m[slot];});
+      var isNow=slot===curSlot;
+      html+='<div class="col '+slot+(isNow?' now':'')+'">'+
+              '<div class="col-head">'+pair[2]+'<h3>'+pair[1]+'</h3>'+(isNow?'<span class="nowtag">now</span>':'')+'</div>';
+      if(!meds.length){
+        html+='<div class="col-empty">No '+slot.toUpperCase()+' meds.</div>';
+      } else {
+        meds.forEach(function(m){
+          var e=state.log[key] && state.log[key][m.id], ts=e && e[slot], taken=!!ts;
+          html+='<button class="dose'+(taken?' taken':'')+'" data-med="'+m.id+'" data-slot="'+slot+'">'+
+                  '<span class="box">'+CHECK+'</span>'+
+                  '<span><span class="name">'+esc(m.name)+'</span><br>'+
+                  '<span class="sub">'+(taken?('Taken '+fmtTime(ts)):'Not taken yet')+'</span></span>'+
+                '</button>';
+        });
+      }
+      html+='</div>';
+    });
+    el('today').innerHTML=html;
+    Array.prototype.forEach.call(el('today').querySelectorAll('.dose'),function(b){
+      b.addEventListener('click',function(){ toggleDose(b.dataset.med, b.dataset.slot); });
+    });
+  }
+
+  function renderMeds(){
+    var wrap=el('medList');
+    if(!state.meds.length){ wrap.innerHTML='<div class="empty">No medications yet. Tap “+ Add” to create one.</div>'; return; }
+    wrap.innerHTML=state.meds.map(function(m){
+      return '<div class="med" data-med="'+m.id+'">'+
+        '<span class="mname">'+esc(m.name)+'</span>'+
+        '<span class="sched">'+(m.am?'<span class="tag am">AM</span>':'')+(m.pm?'<span class="tag pm">PM</span>':'')+'</span>'+
+        '<button class="icon-btn edit" title="Rename">'+PEN+'</button>'+
+        '<button class="icon-btn del" title="Delete">'+TRASH+'</button>'+
+      '</div>';
+    }).join('');
+    Array.prototype.forEach.call(wrap.querySelectorAll('.med'),function(row){
+      var id=row.dataset.med;
+      row.querySelector('.edit').addEventListener('click',function(){ renameMed(id); });
+      row.querySelector('.del').addEventListener('click',function(){ deleteMed(id); });
+    });
+  }
+
+  function renderHistory(){
+    var html='', today=dayKey();
+    for(var i=0;i<14;i++){
+      var d=new Date(); d.setDate(d.getDate()-i);
+      var key=dayKey(d);
+      var cells='';
+      ['am','pm'].forEach(function(slot){
+        var scheduled=state.meds.filter(function(m){return m[slot];});
+        if(!scheduled.length) return;
+        var done=scheduled.filter(function(m){return isTaken(key,m.id,slot);}).length;
+        var all=done===scheduled.length, none=done===0;
+        var cls='hcell '+slot+(all?' on':'')+((none&&key!==today)?' miss':'');
+        var txt=(slot==='am'?'AM':'PM')+' '+done+'/'+scheduled.length;
+        cells+='<span class="'+cls+'">'+txt+'</span>';
+      });
+      if(!cells) cells='<span class="hcell">no meds</span>';
+      html+='<div class="hrow'+(key===today?' today-row':'')+'"><span class="hd">'+labelForKey(key)+'</span><span class="hcells">'+cells+'</span></div>';
+    }
+    el('history').innerHTML=html;
+  }
+
+  function render(){ renderRounds(); renderToday(); renderMeds(); renderHistory(); }
+
+  function esc(s){ return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+
+  // ---------- med management ----------
+  function renameMed(id){
+    var m=state.meds.find(function(x){return x.id===id;}); if(!m) return;
+    var name=prompt('Rename medication:', m.name);
+    if(name===null) return; name=name.trim(); if(!name) return;
+    m.name=name.slice(0,40); save(); render();
+  }
+  function deleteMed(id){
+    var m=state.meds.find(function(x){return x.id===id;}); if(!m) return;
+    if(!confirm('Delete “'+m.name+'”? Its history stays in backups but it leaves this list.')) return;
+    state.meds=state.meds.filter(function(x){return x.id!==id;}); save(); render();
+  }
+
+  // add form
+  var addAm=true, addPm=true;
+  el('addToggle').addEventListener('click',function(){
+    var f=el('addForm'); f.classList.toggle('open');
+    if(f.classList.contains('open')) el('medName').focus();
+  });
+  function setTg(btn,on){ btn.setAttribute('aria-pressed', on?'true':'false'); }
+  el('tgAm').addEventListener('click',function(){ addAm=!addAm; if(!addAm&&!addPm){addPm=true;setTg(el('tgPm'),true);} setTg(this,addAm); });
+  el('tgPm').addEventListener('click',function(){ addPm=!addPm; if(!addAm&&!addPm){addAm=true;setTg(el('tgAm'),true);} setTg(this,addPm); });
+  function submitMed(){
+    var name=el('medName').value.trim(); if(!name) return el('medName').focus();
+    state.meds.push({id:uid(), name:name.slice(0,40), am:addAm, pm:addPm});
+    el('medName').value=''; el('addForm').classList.remove('open');
+    save(); render();
+  }
+  el('medSave').addEventListener('click', submitMed);
+  el('medName').addEventListener('keydown',function(e){ if(e.key==='Enter') submitMed(); });
+
+  // ---------- backup ----------
+  el('exportBtn').addEventListener('click',function(){
+    var blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='meds-backup-'+dayKey()+'.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); },1000);
+  });
+  el('importBtn').addEventListener('click',function(){ el('importFile').click(); });
+  el('importFile').addEventListener('change',function(e){
+    var file=e.target.files[0]; if(!file) return;
+    var r=new FileReader();
+    r.onload=function(){
+      try{
+        var data=JSON.parse(r.result);
+        if(!data || !Array.isArray(data.meds) || typeof data.log!=='object') throw 0;
+        if(!confirm('Replace current data with this backup?')) return;
+        state=data; save(); render();
+      }catch(err){ alert('That file could not be read as a meds backup.'); }
+    };
+    r.readAsText(file); e.target.value='';
+  });
+
+  // ---------- clock + rollover ----------
+  var shownDay=dayKey();
+  function tick(){
+    var now=new Date();
+    el('timeStr').textContent=fmtTime(now.getTime());
+    el('dateStr').textContent=now.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});
+    if(dayKey()!==shownDay){ shownDay=dayKey(); render(); } // new day -> fresh boxes
+  }
+  document.addEventListener('visibilitychange',function(){ if(!document.hidden){ tick(); renderRounds(); renderToday(); } });
+
+  // storage note
+  el('storageNote').textContent = canPersist
+    ? 'Saved automatically on this device. Bookmark or “Add to Home Screen” for one-tap access.'
+    : 'Preview mode: your ticks are kept for this session only. Once you host this file (or open it directly), it saves permanently on your device.';
+
+  render(); tick(); setInterval(tick, 15000);
+})();
+</script>
+</body>
+</html>
