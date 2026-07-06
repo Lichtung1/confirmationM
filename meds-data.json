@@ -1,7 +1,7 @@
 {
   "meds": [
     {
-      "id": "mmr8jjh1x5891",
+      "id": "mmr8jtl00bj2k",
       "name": "My medication",
       "am": true,
       "pm": true
@@ -15,5 +15,5 @@
       }
     }
   },
-  "updatedAt": 1783301521638
+  "updatedAt": 1783301755536
 }
