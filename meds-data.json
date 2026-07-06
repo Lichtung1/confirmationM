@@ -1,7 +1,7 @@
 {
   "meds": [
     {
-      "id": "mmr8k3m37asy1",
+      "id": "mmr8k66m1hav6",
       "name": "My Medication",
       "am": true,
       "pm": true
@@ -20,8 +20,12 @@
       "mmr8k3m37asy1": {
         "am": 1783302319143,
         "pm": null
+      },
+      "mmr8k66m1hav6": {
+        "am": 1783302349071,
+        "pm": null
       }
     }
   },
-  "updatedAt": 1783302319143
+  "updatedAt": 1783302349071
 }
