@@ -1,0 +1,23 @@
+{
+  "meds": [
+    {
+      "id": "mmr8jtl00bj2k",
+      "name": "My medication",
+      "am": true,
+      "pm": true
+    }
+  ],
+  "log": {
+    "2026-07-05": {
+      "mmr8jjh1x5891": {
+        "am": 1783301521638,
+        "pm": null
+      },
+      "mmr8jtl00bj2k": {
+        "am": 1783302111644,
+        "pm": null
+      }
+    }
+  },
+  "updatedAt": 1783302182678
+}
