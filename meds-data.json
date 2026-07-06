@@ -1,12 +1,5 @@
 {
-  "meds": [
-    {
-      "id": "mmr8jtl00bj2k",
-      "name": "My medication",
-      "am": true,
-      "pm": true
-    }
-  ],
+  "meds": [],
   "log": {
     "2026-07-05": {
       "mmr8jjh1x5891": {
@@ -19,5 +12,5 @@
       }
     }
   },
-  "updatedAt": 1783302120476
+  "updatedAt": 1783302208290
 }
